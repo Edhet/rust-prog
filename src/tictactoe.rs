@@ -44,6 +44,18 @@ pub fn play() {
 }
 
 fn end_game (in_table: &Vec<i32>) -> bool {
+    let mut tie: bool = true;
+    
+    for entry in in_table {
+        let buffer: i32 = *entry;
+        if buffer == 0 {
+            tie = false
+        }
+    }
+    if tie == true {
+        println!("\nTie!");
+        return false;
+    }
 
     if in_table[0] & in_table[1] & in_table[2] == 1 ||
     in_table[3] & in_table[4] & in_table[5] == 1 ||
