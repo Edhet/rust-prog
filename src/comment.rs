@@ -7,8 +7,8 @@ struct Comment {
     rating: i32,
 }
 
-fn main(){
-    let mut co_file = File::create("/home/edhet/Downloads/rust-comment/Comments.txt").expect("Error opening file.");
+pub fn call(){
+    let mut co_file = File::create("/home/edhet/Downloads/rust-prog/Comments.txt").expect("Error opening file.");
 
     let mut user_input = Comment {
         username: String::new(),
@@ -31,6 +31,5 @@ fn main(){
             
             _ => println!("Error"),
         }
-        fs::write("Comments.txt", "Adicionou!?");
     }
 }
