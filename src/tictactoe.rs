@@ -4,7 +4,8 @@ use rand::{self, Rng, thread_rng};
 pub fn play() {
     let mut table = vec![0, 0, 0, 0, 0, 0, 0, 0, 0];
     let mut game_on = true;
-    
+
+    intro();
     print_table(&table);
     
     while game_on == true {
@@ -43,6 +44,19 @@ pub fn play() {
     }
 }
 
+fn intro () {
+    println!(r"
+     _   _      _             _             
+    | | (_)    | |           | |            
+    | |_ _  ___| |_ __ _  ___| |_ ___   ___ 
+    | __| |/ __| __/ _` |/ __| __/ _ \ / _ \
+    | |_| | (__| || (_| | (__| || (_) |  __/
+     \__|_|\___|\__\__,_|\___|\__\___/ \___|
+                                            ");
+
+    println!("\n1_|_2_|_3\n4_|_5_|_6\n7 | 8 | 9\n Insert the cell you want to put the 'X'\n");
+}
+
 fn end_game (in_table: &Vec<i32>) -> bool {
     let mut tie: bool = true;
     
@@ -52,11 +66,11 @@ fn end_game (in_table: &Vec<i32>) -> bool {
             tie = false
         }
     }
+    
     if tie == true {
         println!("\nTie!");
         return false;
     }
-
     if in_table[0] & in_table[1] & in_table[2] == 1 ||
     in_table[3] & in_table[4] & in_table[5] == 1 ||
     in_table[6] & in_table[7] & in_table[8] == 1 || 
@@ -79,7 +93,6 @@ fn end_game (in_table: &Vec<i32>) -> bool {
         println!("\nPlayer Lost");
         return false;
     }
-    
     else {
         return true;
     }
