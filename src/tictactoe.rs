@@ -5,9 +5,18 @@ pub fn play() {
     let mut table = vec![0, 0, 0, 0, 0, 0, 0, 0, 0];
     let mut game_on = true;
 
-    intro();
+    println!(r"
+    _   _      _             _             
+   | | (_)    | |           | |            
+   | |_ _  ___| |_ __ _  ___| |_ ___   ___ 
+   | __| |/ __| __/ _` |/ __| __/ _ \ / _ \
+   | |_| | (__| || (_| | (__| || (_) |  __/
+    \__|_|\___|\__\__,_|\___|\__\___/ \___|
+                                           ");
+
+    println!("\n1_|_2_|_3\n4_|_5_|_6\n7 | 8 | 9\n Insert the cell you want to put the 'X'\n");
     print_table(&table);
-    
+        
     while game_on == true {
         let mut playing: bool = true;
         while playing == true {
@@ -26,7 +35,7 @@ pub fn play() {
                 playing = false;
             }
         }
-        game_on = end_game(&table);
+        game_on = game_check(&table);                                     
         if game_on == false {print_table(&table); break;}
 
         let mut ia_playing: bool = true;
@@ -38,39 +47,21 @@ pub fn play() {
                 ia_playing = false;
             }
         }
-        game_on = end_game(&table);
-        print_table(&table);
-        
+        game_on = game_check(&table);
+        print_table(&table);      
     }
 }
 
-fn intro () {
-    println!(r"
-     _   _      _             _             
-    | | (_)    | |           | |            
-    | |_ _  ___| |_ __ _  ___| |_ ___   ___ 
-    | __| |/ __| __/ _` |/ __| __/ _ \ / _ \
-    | |_| | (__| || (_| | (__| || (_) |  __/
-     \__|_|\___|\__\__,_|\___|\__\___/ \___|
-                                            ");
-
-    println!("\n1_|_2_|_3\n4_|_5_|_6\n7 | 8 | 9\n Insert the cell you want to put the 'X'\n");
-}
-
-fn end_game (in_table: &Vec<i32>) -> bool {
-    let mut tie: bool = true;
+fn game_check (in_table: &Vec<i32>) -> bool {
     
-    for entry in in_table {
-        let buffer: i32 = *entry;
-        if buffer == 0 {
-            tie = false
-        }
+    
+    if in_table.contains(&0) {
     }
-    
-    if tie == true {
+    else {
         println!("\nTie!");
         return false;
     }
+
     if in_table[0] & in_table[1] & in_table[2] == 1 ||
     in_table[3] & in_table[4] & in_table[5] == 1 ||
     in_table[6] & in_table[7] & in_table[8] == 1 || 

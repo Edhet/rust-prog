@@ -2,8 +2,7 @@ use std::{io, i8};
 use rand::{self, thread_rng, Rng};
 
 pub fn play() {
-    let allowed_chars = vec!["q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "a", "s", "d",
-                                         "f", "g", "h", "j", "k", "l", "z", "x", "c", "v", "b", "n", "m",];
+    let allowed_chars = vec!["q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "a", "s", "d", "f", "g", "h", "j", "k", "l", "z", "x", "c", "v", "b", "n", "m",];
 
     let words = vec!["macarrao", "salsicha", "batata", "guaravita", "sal", "antofagasta", "peba"];
     let selector = thread_rng().gen_range(0..words.len());
@@ -24,7 +23,7 @@ pub fn play() {
     }
 
     println!(r"
-    _
+     _
     | |
     | |__   __ _ _ __   __ _ _ __ ___   __ _ _ __
     | '_ \ / _` | '_ \ / _` | '_ ` _ \ / _` | '_ \
