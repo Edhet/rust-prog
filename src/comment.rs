@@ -1,5 +1,6 @@
 use std::io::{self, Write};
-use std::fs::{File, self};
+use std::fs::OpenOptions;
+use std::env;
 
 #[derive(Debug)]
 struct Comment {
@@ -7,8 +8,17 @@ struct Comment {
     rating: i32,
 }
 
-pub fn call(){
-    let mut co_file = File::create("/home/edhet/Downloads/rust-prog/Comments.txt").expect("Error opening file.");
+pub fn call() {
+
+    let mut file_path = env::current_dir().unwrap();
+    file_path.push("Database.txt");
+
+    let mut database = OpenOptions::new()
+    .create(true)
+    .append(true)
+    .open(file_path)
+    .expect("Error!");
+    
 
     let mut user_input = Comment {
         username: String::new(),
@@ -24,12 +34,12 @@ pub fn call(){
 
         match entry {
             1 => {user_input.username = buffer;
-                co_file.write_all(user_input.username.as_bytes()).expect("Error writing to file.");},
+                database.write_all(user_input.username.as_bytes()).expect("Error writing to file.");},
                 
             2 => {user_input.rating = buffer.trim().parse().expect("Error on Int -> Str");
-                co_file.write_all(buffer.as_bytes()).expect("Error writing to file.");},
+                database.write_all(buffer.as_bytes()).expect("Error writing to file.");},
             
-            _ => println!("Error"),
+            _ => println!("Error on Loop"),
         }
     }
 }

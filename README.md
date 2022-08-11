@@ -4,7 +4,7 @@ This repository is made to keep track (and backup) my progress in development of
 
 ## comment.rs
 
-Reads input from user and stores it in a .txt on a folder.
+Reads input from user and stores it in a .txt on the executing folder.
 
 ## guessing_game.rs
 
