@@ -18,3 +18,7 @@ Simple hangman game with hardcoded words.
 ## tictactoe.rs
 
 Tic Tac Toe with enemy "AI".
+
+## calculator_cli.rs
+
+CLI calculator with a primitive string processing.
