@@ -18,13 +18,16 @@ pub fn call() -> io::Result<()> {
     .append(true)
     .open(file_path)?;
     
-    println!("To insert a comment type 'Insert'\nTo see the average rating of comments type 'Average'\nTo exit the program type 'Exit'\n");
-    
+    println!(r" 
+    To insert a comment type 'Insert'
+    To see the average rating of comments type 'Average'
+    To exit the program type 'Exit'
+    ");
+
     loop {
         let mut input = String::new();
 
-        io::stdin()
-        .read_line(&mut input)?;
+        io::stdin().read_line(&mut input)?;
         let input = input.as_str().trim();
 
         match input {
@@ -56,13 +59,17 @@ fn take_input(file: &mut File) -> io::Result<()> {
             2 => {println!("Insert you rating:");      
                 io::stdin()
                 .read_line(&mut buffer)?;
-                user_comment.rating = buffer.trim().parse::<i32>().unwrap_or(0)},
+                let mut buffer = buffer.trim().parse::<i32>().unwrap_or(0);
+                if buffer > 10 {buffer = 10;}
+                if buffer < 0 {buffer = 0;}
+                user_comment.rating = buffer},
             _ => break
         }
     }
 
     file.write_all(format!("Name: '{}'\n", user_comment.username).as_bytes())?;
     file.write_all(format!("Rating: '{}'\n", user_comment.rating).as_bytes())?;
+    println!("Comment stored...\n");
 
     Ok(())
 }
