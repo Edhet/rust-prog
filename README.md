@@ -22,3 +22,7 @@ Tic Tac Toe with enemy "AI".
 ## calculator_cli.rs
 
 CLI calculator with a primitive string processing.
+
+## cat_tamagochi.rs
+
+Tamagochi game in 'turns' with a cat made for studying structs and enums.
