@@ -70,28 +70,6 @@ impl Cat {
         }
     }
 
-    fn normalize (&mut self) {
-        if self.boredom > 10 {
-            self.boredom = 10;
-        }
-        if self.tiredness > 10 {
-            self.tiredness = 10;
-        }
-        if self.hunger > 10 {
-            self.hunger = 10;
-        }
-
-        if self.boredom < 0 {
-            self.boredom = 0;
-        }
-        if self.tiredness < 0 {
-            self.tiredness = 0;
-        }
-        if self.hunger < 0 {
-            self.hunger = 0;
-        }
-    }
-
     fn update (&mut self) {
         self.tiredness += 2;
         self.boredom += 2;
@@ -108,7 +86,10 @@ impl Cat {
             }
         }
 
-        self.normalize();
+        self.tiredness = self.tiredness.clamp(0, 10);
+        self.boredom = self.boredom.clamp(0, 10);
+        self.hunger = self.hunger.clamp(0, 10);
+
         self.draw();
     }
 }
@@ -123,7 +104,7 @@ pub fn play() -> io::Result<()> {
     ");
     loop {
         io::stdin().read_line(&mut cat.name)?;
-        if cat.name.len() != 0 {
+        if cat.name.trim().len() != 0 {
             break;
         }
     }
