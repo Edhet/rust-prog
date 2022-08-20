@@ -1,7 +1,7 @@
 use std::{io, i8};
 use rand::{self, thread_rng, Rng};
 
-pub fn play() {
+pub fn play() -> io::Result<()> {
     let allowed_chars = vec!["q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "a", "s", "d", "f", "g", "h", "j", "k", "l", "z", "x", "c", "v", "b", "n", "m",];
 
     let words = vec!["macarrao", "salsicha", "batata", "guaravita", "sal", "antofagasta", "peba"];
@@ -31,17 +31,15 @@ pub fn play() {
     |_| |_|\__,_|_| |_|\__, |_| |_| |_|\__,_|_| |_|
                         __/ |
                        |___/  ");
-    let mut playing = true;
-    while playing == true {
+    loop {
         let mut input = String::new();
 
         println!("\n{}", print_word(&word, &inp_chars));
         println!("Lives remaing: {}", lives);
 
-        io::stdin()
-        .read_line(&mut input)
-        .expect("Error on Input");
-        let input = input.as_str().trim();
+        io::stdin().read_line(&mut input)?;
+        let input = input.trim().to_lowercase(); 
+        let input = input.as_str();
 
         if allowed_chars.contains(&input) {
             let input = input.trim().chars();
@@ -62,17 +60,18 @@ pub fn play() {
 
             if word == print_word(&word, &inp_chars) {
                 println!("\nYou Won!\nThe word was {}!", word);
-                playing = false;
+                break;
             }
             if lives == 0 {
                 println!("\nYou Lost!\nThe word was {}!", word);
-                playing = false;
+                break;
             }
         }
         else {
             println!("The character inputed is not allowed.");
         }
     }
+    Ok(())
 }
 
 fn print_word (all: &String, allowed: &Vec<char>) -> String{

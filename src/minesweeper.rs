@@ -1,7 +1,7 @@
 use rand::Rng;
 use std::io;
 
-pub fn play() {
+pub fn play() -> io::Result<()> {
     let allowed_inputs = vec!["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16"];
 
     let mut map = vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
@@ -23,16 +23,13 @@ pub fn play() {
                                                     /_/  ");
     println!("Insert the cell number you want to open\nNo need to put flags\n");
 
-    let mut playing = true;
-    while playing == true {
+    loop {
         let mut input = String::new();
         let mut input_history = vec![];
 
         print_map(&map);
         
-        io::stdin()
-        .read_line(&mut input)
-        .expect("Error on input");
+        io::stdin().read_line(&mut input)?;
         let input = input.as_str().trim();
         input_history.push(input);
         
@@ -41,15 +38,15 @@ pub fn play() {
             input -= 1;
 
             if map[input] == -1 {
-                playing = false;
                 println!("\nYou exploded\n");
+                break;
             }
             else {
                 map[input] = 1;
                 if check_win(&map) == true {
                     println!("\nYou found all bombs.\n You won!!\n");
                     print_map(&map);
-                    playing = false;
+                    break;
                 }
             }
         } 
@@ -57,43 +54,45 @@ pub fn play() {
             println!("Invalid input.");
         }
     }
+    Ok(())
+}
 
-    fn print_map (map: &Vec<i32>) {
-        let mut index = 0;
-        let mut newline = 0;
+fn print_map (map: &Vec<i32>) {
+    let mut index = 0;
+    let mut newline = 0;
 
-        for entry in map {
-            let buffer: i32 = *entry;
-            index += 1;
-            newline += 1;
+    for entry in map {
+        let buffer: i32 = *entry;
+        index += 1;
+        newline += 1;
 
-            match buffer {
-                -1 => print!("💣"),
-                0 => print!("▩ "),
-                1 => print!("{} ", detect_mines(index, map)),
-                _ => continue
-            }
-            if newline == 4 {
-                newline = 0;
-                print!("\n");
-            }
+        match buffer {
+            -1 => print!("💣"),
+            0 => print!("▩ "),
+            1 => print!("{} ", detect_mines(index, map)),
+            _ => continue
         }
-        print!("\n");
-    }
-
-    fn detect_mines (place: usize, map: &Vec<i32>) -> i32 {
-        let mut close_mines = 0;
-        
-        return close_mines;
-    }
-
-    fn check_win (map: &Vec<i32>) -> bool {
-        let mut end_game = true;
-
-        if map.contains(&0) {
-            end_game = false;
+        if newline == 4 {
+            newline = 0;
+            print!("\n");
         }
-
-        return end_game;
     }
+    print!("\n");
+}
+
+// WORK IN PROGRESS... 
+fn detect_mines (place: usize, map: &Vec<i32>) -> i32 {
+    let mut close_mines = 0;
+    
+    return close_mines;
+}
+
+fn check_win (map: &Vec<i32>) -> bool {
+    let mut end_game = true;
+
+    if map.contains(&0) {
+        end_game = false;
+    }
+
+    return end_game;
 }

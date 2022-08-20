@@ -7,6 +7,7 @@ pub fn start() -> io::Result<()> {
 
     println!(r"
     Welcome to the CAL-CLI.
+    Insert the two numbers in the order you want to operate on, and the operation.
     List of Operations:
         +, -, *, /, **, sqrt, cbrt.
         type 'exit' to quit.

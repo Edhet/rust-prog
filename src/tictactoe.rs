@@ -1,9 +1,10 @@
 use std::io;
 use rand::{self, Rng, thread_rng};
 
-pub fn play() {
+pub fn play() -> io::Result<()> {
+
+    let digit = vec!["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
     let mut table = vec![0, 0, 0, 0, 0, 0, 0, 0, 0];
-    let mut game_on = true;
 
     println!(r"
     _   _      _             _             
@@ -17,39 +18,45 @@ pub fn play() {
     println!("\n1_|_2_|_3\n4_|_5_|_6\n7 | 8 | 9\n Insert the cell you want to put the 'X'\n");
     print_table(&table);
         
-    while game_on == true {
-        let mut playing: bool = true;
-        while playing == true {
-            let mut input_buffer: String = String::new();
-            
-            io::stdin()
-            .read_line(&mut input_buffer)
-            .expect("Error on input");
-            let input_buffer: usize = input_buffer.trim().parse().expect("Error on parsing");
+    loop {
 
-            if table[input_buffer - 1] != 0 {
-                println!("This cell have already been taken");
+        // PLAYER TURN
+        loop {
+            let mut input_buffer: String = String::new();
+            io::stdin().read_line(&mut input_buffer)?;
+
+            if digit.contains(&input_buffer.trim()) {
+                let input_buffer: usize = input_buffer.trim().parse::<usize>().unwrap();
+
+                if table[input_buffer - 1] != 0 {
+                    println!("This cell have already been taken");
+                }
+                else {
+                    table[input_buffer - 1] += 1;
+                    break;
+                }
             }
             else {
-                table[input_buffer - 1] += 1;
-                playing = false;
+                println!("Wrong input");
             }
         }
-        game_on = game_check(&table);                                     
-        if game_on == false {print_table(&table); break;}
 
-        let mut ia_playing: bool = true;
-        while ia_playing == true  {
+        if game_check(&table) == false {print_table(&table); break;}
+
+        // AI TURN
+        loop {
             let ia_play: usize = thread_rng().gen_range(0..8);
 
             if table[ia_play] == 0 {
                 table[ia_play] += 2;
-                ia_playing = false;
+                break;
             }
         }
-        game_on = game_check(&table);
-        print_table(&table);      
+
+        if game_check(&table) == false {print_table(&table); break;}    
+        print_table(&table);  
     }
+    Ok(())
 }
 
 fn game_check (in_table: &Vec<i32>) -> bool {
