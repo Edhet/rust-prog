@@ -20,8 +20,11 @@ pub fn play() -> io::Result<()> {
    / /|_/ // // __ \ / _ \ / ___/| | /| / // _ \ / _ \ / __ \ / _ \ / ___/
   / /  / // // / / //  __/(__  ) | |/ |/ //  __//  __// /_/ //  __// /    
  /_/  /_//_//_/ /_/ \___//____/  |__/|__/ \___/ \___// .___/ \___//_/     
-                                                    /_/  ");
-    println!("Insert the cell number you want to open\nNo need to put flags\n");
+                                                    /_/  
+    Insert the cell number you want to open
+    No need to put flags
+");
+
 
     loop {
         let mut input = String::new();
@@ -63,7 +66,6 @@ fn print_map (map: &Vec<i32>) {
 
     for entry in map {
         let buffer: i32 = *entry;
-        index += 1;
         newline += 1;
 
         match buffer {
@@ -76,14 +78,49 @@ fn print_map (map: &Vec<i32>) {
             newline = 0;
             print!("\n");
         }
+
+        index += 1;
     }
     print!("\n");
 }
 
-// WORK IN PROGRESS... 
 fn detect_mines (place: usize, map: &Vec<i32>) -> i32 {
+    let left_numbers = vec![0, 4, 8, 12];
+    let right_numbers = vec![3, 7, 11, 15];
+
     let mut close_mines = 0;
-    
+
+    if left_numbers.contains(&place) == false {
+        if map.get(place - 1).unwrap_or(&0) == &-1 {
+            close_mines += 1;
+        }
+        if map.get(place + 3).unwrap_or(&0) == &-1 {
+            close_mines += 1;
+        }
+        if map.get(place - 5).unwrap_or(&0) == &-1 {
+            close_mines += 1;
+        }
+    }
+
+    if right_numbers.contains(&place) == false {
+        if map.get(place + 1).unwrap_or(&0) == &-1 {
+            close_mines += 1;
+        }
+        if map.get(place - 3).unwrap_or(&0) == &-1 {
+            close_mines += 1;
+        }
+        if map.get(place + 5).unwrap_or(&0) == &-1 {
+            close_mines += 1;
+        }
+    }
+
+    if map.get(place - 4).unwrap_or(&0) == &-1 {
+        close_mines += 1;
+    }
+    if map.get(place + 4).unwrap_or(&0) == &-1 {
+        close_mines += 1;
+    }
+
     return close_mines;
 }
 

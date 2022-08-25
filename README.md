@@ -38,6 +38,12 @@ Tic Tac Toe with enemy "AI".
 
 CLI calculator with a primitive string processing.
 
+## minesweeper.rs
+
+A minesweeper game on a 4x4 fixed grid.
+
+> The game has issues on running on debug mode due to a overflow in usize index on the bomb detection function.
+
 ## cat_tamagotchi.rs
 
 Tamagotchi clone in 'turns' for practicing usage of enums and structs.
