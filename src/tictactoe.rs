@@ -1,10 +1,10 @@
 use std::io;
-use rand::{self, Rng, thread_rng};
+use rand::{self, Rng};
 
 pub fn play() -> io::Result<()> {
-
-    let digit = vec!["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
-    let mut table = vec![0, 0, 0, 0, 0, 0, 0, 0, 0];
+    let width = 3;
+    let height = 3;
+    let mut table = vec![vec![0; width]; height];
 
     println!(r"
     _   _      _             _             
@@ -13,107 +13,185 @@ pub fn play() -> io::Result<()> {
    | __| |/ __| __/ _` |/ __| __/ _ \ / _ \
    | |_| | (__| || (_| | (__| || (_) |  __/
     \__|_|\___|\__\__,_|\___|\__\___/ \___|
-                                           ");
-
-    println!("\n1_|_2_|_3\n4_|_5_|_6\n7 | 8 | 9\n Insert the cell you want to put the 'X'\n");
-    print_table(&table);
-        
+                                           
+    1A | 1B | 1C
+    2A | 2B | 2C
+    3A | 3B | 3C
+    
+    Insert the cell you want to put the 'X'
+    ");
+    
     loop {
 
         // PLAYER TURN
         loop {
-            let mut input_buffer: String = String::new();
-            io::stdin().read_line(&mut input_buffer)?;
-
-            if digit.contains(&input_buffer.trim()) {
-                let input_buffer: usize = input_buffer.trim().parse::<usize>().unwrap();
-
-                if table[input_buffer - 1] != 0 {
-                    println!("This cell have already been taken");
+            let mut string_input: String = String::new();
+            io::stdin().read_line(&mut string_input)?;
+            let string_input = string_input.to_uppercase();
+            let string_input = string_input.trim();
+            
+            if string_input.len() == 2 {
+                let number_input = player_input(string_input);
+                
+                if table[number_input[0]][number_input[1]] == 0 {
+                    table[number_input[0]][number_input[1]] = 1;
+                    break;
                 }
                 else {
-                    table[input_buffer - 1] += 1;
-                    break;
+                    println!("This cell has already been marked.");
                 }
             }
             else {
-                println!("Wrong input");
+                println!("Wrong format...");
             }
         }
 
-        if game_check(&table) == false {print_table(&table); break;}
+        if continue_game(&table) == false {print_table(&table); break;}
 
         // AI TURN
         loop {
-            let ia_play: usize = thread_rng().gen_range(0..8);
-
-            if table[ia_play] == 0 {
-                table[ia_play] += 2;
+            let line = rand::thread_rng().gen_range(0..=2);
+            let row = rand::thread_rng().gen_range(0..=2);
+            
+            if table[line][row] == 0 {
+                table[line][row] = -1;
                 break;
             }
         }
 
-        if game_check(&table) == false {print_table(&table); break;}    
-        print_table(&table);  
+        if continue_game(&table) == false {print_table(&table); break;}
+        print_table(&table);
     }
     Ok(())
 }
 
-fn game_check (in_table: &Vec<i32>) -> bool {
-    
-    
-    if in_table.contains(&0) {
+fn continue_game (table: &Vec<Vec<i32>>) -> bool {
+	let mut won = false;
+    let mut lost = false;
+	let mut tie = true;
+
+	for line in table {
+		if line.contains(&0) {
+			tie = false;
+		}
+	}
+	
+    for line in 0..=2 {
+        let mut sum = 0;
+        for row in 0..=2 {
+            sum += table[line][row]; 
+            if sum == 3 {
+                won = true;
+            }
+            if sum == -3 {
+                lost = true;
+            }
+        }
     }
-    else {
-        println!("\nTie!");
-        return false;
+    for row in 0..=2 {
+        let mut sum = 0;
+        for line in 0..=2 {
+            sum += table[line][row]; 
+            if sum == 3 {
+                won = true;
+            }
+            if sum == -3 {
+                lost = true;
+            }
+        }
+    }
+    if table[1][1] != 0 {
+        let mut sum = 0;
+        sum += table[1][1] + table[0][2] + table[2][0];
+        if sum == 3 {
+            won = true;
+        }
+        if sum == -3 {
+            lost = true;
+        }
+
+        let mut sum = 0;
+        sum += table[1][1] + table[0][0] + table[2][2];
+        if sum == 3 {
+            won = true;
+        }
+        if sum == -3 {
+            lost = true;
+        }
     }
 
-    if in_table[0] & in_table[1] & in_table[2] == 1 ||
-    in_table[3] & in_table[4] & in_table[5] == 1 ||
-    in_table[6] & in_table[7] & in_table[8] == 1 || 
-    in_table[0] & in_table[3] & in_table[6] == 1 ||
-    in_table[1] & in_table[4] & in_table[7] == 1 ||
-    in_table[2] & in_table[5] & in_table[8] == 1 ||
-    in_table[0] & in_table[4] & in_table[8] == 1 ||
-    in_table[2] & in_table[4] & in_table[6] == 1 {
-        println!("\nPlayer Won!");
+    if won {
+        println!("\nYou won!");
         return false;
     }
-    else if in_table[0] & in_table[1] & in_table[2] == 2 ||
-    in_table[3] & in_table[4] & in_table[5] == 2 ||
-    in_table[6] & in_table[7] & in_table[8] == 2 || 
-    in_table[0] & in_table[3] & in_table[6] == 2 ||
-    in_table[1] & in_table[4] & in_table[7] == 2 ||
-    in_table[2] & in_table[5] & in_table[8] == 2 ||
-    in_table[0] & in_table[4] & in_table[8] == 2 ||
-    in_table[2] & in_table[4] & in_table[6] == 2 {
-        println!("\nPlayer Lost");
+    if lost {
+        println!("\nYou lost!");
         return false;
     }
-    else {
-        return true;
-    }
+	if tie {
+		println!("\nTie!");
+		return false;
+	}
+    return true;
 }
 
-fn print_table (in_table: &Vec<i32>) {
-    let mut pretty_table: Vec<String> = vec![];
+fn player_input (input: &str) -> Vec<usize> {
+    let numbers = vec!['1', '2', '3'];
+    let letters = vec!['A', 'B', 'C'];
+    let mut number_input = vec![];
 
-    for entry in in_table {
-        let buffer: i32 = *entry;
-        if buffer == 0 {
-            pretty_table.push(" ".to_string());
+    let mut iter = 0;
+    for char in input.chars() {
+        if iter == 0 {
+            if numbers.contains(&char) {
+                match char {
+                    '1' => number_input.push(0),
+                    '2' => number_input.push(1),
+                    '3' => number_input.push(2),
+                    _ => continue
+                }
+            }
+            else {
+                println!("Wrong format...");
+            }
         }
-        if buffer == 1 {
-            pretty_table.push("X".to_string());
+        else if iter == 1 {
+            if letters.contains(&char) {
+                match char {
+                    'A' => number_input.push(0),
+                    'B' => number_input.push(1),
+                    'C' => number_input.push(2),
+                    _ => continue
+                }
+            }
+            else {
+                println!("Wrong format...");
+            } 
         }
-        if buffer == 2{
-            pretty_table.push("O".to_string());
+        else {
+            break;
         }
+        iter += 1;
     }
+    return number_input;
+}
 
-    println!("\n{}_|_{}_|_{}\n{}_|_{}_|_{}\n{} | {} | {}", 
-    pretty_table[0], pretty_table[1], pretty_table[2],
-    pretty_table[3], pretty_table[4], pretty_table[5],
-    pretty_table[6], pretty_table[7], pretty_table[8]);
+fn print_table (table: &Vec<Vec<i32>>) {
+	print!("\n");
+    for line in table {
+        let mut tabs = 0; 
+        for entry in line {
+            match entry {
+                0 => print!("   "),
+                1 => print!(" X "),
+                -1 => print!(" O "),
+                _ => continue
+            }
+            if tabs < 2 {
+                print!("|");
+                tabs += 1;
+            }
+        }
+        print!("\n");
+    }
 }
