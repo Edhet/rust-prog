@@ -75,7 +75,7 @@ fn continue_game (table: &Vec<Vec<i32>>) -> bool {
 			tie = false;
 		}
 	}
-	
+
     for line in 0..=2 {
         let mut sum = 0;
         for row in 0..=2 {
@@ -119,7 +119,7 @@ fn continue_game (table: &Vec<Vec<i32>>) -> bool {
             lost = true;
         }
     }
-
+	
     if won {
         println!("\nYou won!");
         return false;

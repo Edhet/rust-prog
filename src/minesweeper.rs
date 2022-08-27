@@ -59,6 +59,7 @@ pub fn play() -> io::Result<()> {
     print_table(&table, false);
     loop {
 
+        // READ USER INPUT
         let mut input = String::new();
         io::stdin().read_line(&mut input)?;
         let input = input.trim();
@@ -72,6 +73,7 @@ pub fn play() -> io::Result<()> {
             }
         }
 
+        // OPEN PLAYER INPUTED TILE
         if number_input.len() == 2 {
             if table[number_input[0]][number_input[1]] == -1 {
                 println!("\n\x1b[31mYou exploded!\x1b[0m");
@@ -85,18 +87,63 @@ pub fn play() -> io::Result<()> {
                 table[number_input[0]][number_input[1]] = 1;
             }
             
+            // AUTO-OPEN TILES
             let mut line_i = 0;
             for line in table.clone() {
                 let mut row_i = 0;
                 for _row in line {
                     if auto_open(line_i, row_i, table.clone()) {
-                    table[line_i][row_i] = 1;
+                        table[line_i][row_i] = 1;
+                        
+                        let mut sub_line_i = 0;
+                        for lines in table.clone() {
+                            let mut sub_row_i = 0;
+                            if line_i == 0 {
+                                if sub_line_i == line_i || sub_line_i == line_i + 1 {
+                                    for _rows in lines {
+                                        if row_i == 0 {
+                                            if sub_row_i == row_i || sub_row_i == row_i + 1 {
+                                                if table[sub_line_i][sub_row_i] == 0 {
+                                                    table[sub_line_i][sub_row_i] = 1;
+                                                }
+                                            }
+                                        }
+                                        else if sub_row_i == row_i || sub_row_i == row_i - 1 || sub_row_i == row_i + 1 {
+                                            if table[sub_line_i][sub_row_i] == 0 {
+                                                table[sub_line_i][sub_row_i] = 1;
+                                            }
+                                        }
+                                        sub_row_i += 1;
+                                    }   
+                                }
+                            }
+                            else if sub_line_i == line_i || sub_line_i == line_i - 1 || sub_line_i == line_i + 1 {
+                                for _rows in lines {
+                                    if row_i == 0 {
+                                        if sub_row_i == row_i || sub_row_i == row_i + 1 {
+                                            if table[sub_line_i][sub_row_i] == 0 {
+                                                table[sub_line_i][sub_row_i] = 1;
+                                            }
+                                        }
+                                    }
+                                    else if sub_row_i == row_i || sub_row_i == row_i - 1 || sub_row_i == row_i + 1 {
+                                        if table[sub_line_i][sub_row_i] == 0 {
+                                            table[sub_line_i][sub_row_i] = 1;
+                                        }
+                                    }
+                                    sub_row_i += 1;
+                                }   
+                            }
+                            sub_line_i += 1;
+                        }
+
                     }
                     row_i += 1;
                 }
                 line_i += 1;
             }
 
+            // CHECK IF WON GAME
             let mut continue_game = false;
             for line in table.iter() {
                 if line.contains(&0) {
