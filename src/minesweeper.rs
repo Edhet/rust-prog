@@ -2,18 +2,8 @@ use rand::Rng;
 use std::io;
 
 pub fn play() -> io::Result<()> {
-    let allowed_inputs = vec!["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16"];
-
-    let mut map = vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-
-    for _i in 0..=5 {
-        let placement = rand::thread_rng().gen_range(0..15);
-
-        if map[placement] != -1 {
-            map[placement] = -1;
-        }
-    }
-
+    let mut allowed_inputs = vec!['1', '2', '3', '4', '5', '6'];
+    
     println!(r"
      __  ___ _                                                            
     /  |/  /(_)____   ___   _____ _      __ ___   ___   ____   ___   _____
@@ -21,115 +11,226 @@ pub fn play() -> io::Result<()> {
   / /  / // // / / //  __/(__  ) | |/ |/ //  __//  __// /_/ //  __// /    
  /_/  /_//_//_/ /_/ \___//____/  |__/|__/ \___/ \___// .___/ \___//_/     
                                                     /_/  
-    Insert the cell number you want to open
-    No need to put flags
+
+    How to play:
+
+          1 2 3 4
+        1 E E E E
+        2 E E E E
+        3 E E E E
+        4 E E E E
+
+    Insert the cell you want to play by line followed by row, example:
+    12 for line 1 and row 2.
+    No need to put flags, just avoid the bombs!
+
+    Insert grid size (min is 6, max is 9): 
+
 ");
 
+    let mut input = String::new();
+    io::stdin().read_line(&mut input)?;
+    let mut size = input.trim().parse::<usize>().unwrap_or(6);
+    
+    size = size.clamp(6, 9);
 
-    loop {
-        let mut input = String::new();
-        let mut input_history = vec![];
-
-        print_map(&map);
-        
-        io::stdin().read_line(&mut input)?;
-        let input = input.as_str().trim();
-        input_history.push(input);
-        
-        if allowed_inputs.contains(&input) == true || input_history.contains(&input) == false {
-            let mut input: usize = input.parse().expect("Error parsing");
-            input -= 1;
-
-            if map[input] == -1 {
-                println!("\nYou exploded\n");
-                break;
+    if size > 6 {
+        for n in 7..=size {
+            match n {
+                7 => allowed_inputs.push('7'),
+                8 => allowed_inputs.push('8'), 
+                9 => allowed_inputs.push('9'), 
+                _ => continue
             }
-            else {
-                map[input] = 1;
-                if check_win(&map) == true {
-                    println!("\nYou found all bombs.\n You won!!\n");
-                    print_map(&map);
-                    break;
+        }
+    }
+
+    let mut table = vec![vec![0; size]; size];
+
+    for _i in 0..=size * 2{
+        let line = rand::thread_rng().gen_range(1..size - 1);
+        let row = rand::thread_rng().gen_range(1..size - 1);
+
+        if table[line][row] == 0 {
+            table[line][row] = -1;
+        }
+    }
+
+    print_table(&table, false);
+    loop {
+
+        let mut input = String::new();
+        io::stdin().read_line(&mut input)?;
+        let input = input.trim();
+
+        let mut number_input = vec![];
+        if input.len() == 2 {
+            for char in input.chars() {
+                if allowed_inputs.contains(&char) {
+                    number_input.push(char.to_string().parse::<usize>().unwrap() - 1);
                 }
             }
-        } 
+        }
+
+        if number_input.len() == 2 {
+            if table[number_input[0]][number_input[1]] == -1 {
+                println!("\n\x1b[31mYou exploded!\x1b[0m");
+                print_table(&table, true);
+                break;
+            }
+            else if table[number_input[0]][number_input[1]] == 1 {
+                println!("Already selected that cell");
+            }
+            else if table[number_input[0]][number_input[1]] == 0 {
+                table[number_input[0]][number_input[1]] = 1;
+            }
+            
+            let mut line_i = 0;
+            for line in table.clone() {
+                let mut row_i = 0;
+                for _row in line {
+                    if auto_open(line_i, row_i, table.clone()) {
+                    table[line_i][row_i] = 1;
+                    }
+                    row_i += 1;
+                }
+                line_i += 1;
+            }
+
+            let mut continue_game = false;
+            for line in table.iter() {
+                if line.contains(&0) {
+                    continue_game = true;
+                }
+            }
+            if !continue_game {
+                println!("\n\x1b[32mYou won!\x1b[0m");
+                print_table(&table, true);
+                break;
+            }
+            print_table(&table, false);
+        }
         else {
-            println!("Invalid input.");
+            println!("Wrong format...");
         }
     }
     Ok(())
 }
 
-fn print_map (map: &Vec<i32>) {
-    let mut index = 0;
-    let mut newline = 0;
-
-    for entry in map {
-        let buffer: i32 = *entry;
-        newline += 1;
-
-        match buffer {
-            -1 => print!("💣"),
-            0 => print!("▩ "),
-            1 => print!("{} ", detect_mines(index, map)),
-            _ => continue
-        }
-        if newline == 4 {
-            newline = 0;
-            print!("\n");
-        }
-
-        index += 1;
-    }
+fn print_table (table: &Vec<Vec<i32>>, show_bombs: bool) {
     print!("\n");
+
+    let mut line_i = 0;
+    for line in table {
+        let mut row_i = 0;
+        for entry in line {
+            match entry {
+                -1 => { if show_bombs {print!(" \x1b[31mQ\x1b[0m ");}
+                        else {print!(" \x1b[32m*\x1b[0m ");}},
+                0 => print!(" \x1b[32m*\x1b[0m "),
+                1 => print!(" \x1b[36m{}\x1b[0m ", count_bombs(line_i, row_i, table.clone())),
+                _ => continue
+            }
+            row_i += 1;
+        }
+        print!("\n");
+        line_i += 1;
+    }
 }
 
-fn detect_mines (place: usize, map: &Vec<i32>) -> i32 {
-    let left_numbers = vec![0, 4, 8, 12];
-    let right_numbers = vec![3, 7, 11, 15];
+fn count_bombs (line: usize, row: usize, table: Vec<Vec<i32>>) -> i32 {
+    let mut close_bombs = 0;
 
-    let mut close_mines = 0;
+    let mut line_i = 0;
+    for lines in table.iter() {
+        let mut row_i = 0;
 
-    if left_numbers.contains(&place) == false {
-        if map.get(place - 1).unwrap_or(&0) == &-1 {
-            close_mines += 1;
+        if line == 0 {
+            if line_i == line || line_i == line + 1 {
+                for _rows in lines {
+                    if row == 0 {
+                        if row_i == row || row_i == row + 1 {
+                            if table[line_i][row_i] == -1 {
+                                close_bombs += 1;
+                            }
+                        }
+                    }
+                    else if row_i == row || row_i == row - 1 || row_i == row + 1 {
+                        if table[line_i][row_i] == -1 {
+                            close_bombs += 1;
+                        }
+                    }
+                    row_i += 1;
+                }   
+            }
         }
-        if map.get(place + 3).unwrap_or(&0) == &-1 {
-            close_mines += 1;
+        else if line_i == line || line_i == line - 1 || line_i == line + 1 {
+            for _rows in lines {
+                if row == 0 {
+                    if row_i == row || row_i == row + 1 {
+                        if table[line_i][row_i] == -1 {
+                            close_bombs += 1;
+                        }
+                    }
+                }
+                else if row_i == row || row_i == row - 1 || row_i == row + 1 {
+                    if table[line_i][row_i] == -1 {
+                        close_bombs += 1;
+                    }
+                }
+                row_i += 1;
+            }   
         }
-        if map.get(place - 5).unwrap_or(&0) == &-1 {
-            close_mines += 1;
-        }
+        line_i += 1;
     }
-
-    if right_numbers.contains(&place) == false {
-        if map.get(place + 1).unwrap_or(&0) == &-1 {
-            close_mines += 1;
-        }
-        if map.get(place - 3).unwrap_or(&0) == &-1 {
-            close_mines += 1;
-        }
-        if map.get(place + 5).unwrap_or(&0) == &-1 {
-            close_mines += 1;
-        }
-    }
-
-    if map.get(place - 4).unwrap_or(&0) == &-1 {
-        close_mines += 1;
-    }
-    if map.get(place + 4).unwrap_or(&0) == &-1 {
-        close_mines += 1;
-    }
-
-    return close_mines;
+    return close_bombs;
 }
 
-fn check_win (map: &Vec<i32>) -> bool {
-    let mut end_game = true;
+fn auto_open (line: usize, row: usize, table: Vec<Vec<i32>>) -> bool {
 
-    if map.contains(&0) {
-        end_game = false;
+    if count_bombs(line, row, table.clone()) == 0 {
+        let mut line_i = 0;
+        for lines in table.iter() {
+            let mut row_i = 0;
+
+            if line == 0 {
+                if line_i == line || line_i == line + 1 {
+                    for _rows in lines {
+                        if row == 0 {
+                            if row_i == row || row_i == row + 1 {
+                                if table[line_i][row_i] == 1 {
+                                    return true;
+                                }
+                            }
+                        }
+                        else if row_i == row || row_i == row - 1 || row_i == row + 1 {
+                            if table[line_i][row_i] == 1 {
+                                return true;
+                            }
+                        }
+                        row_i += 1;
+                    }   
+                }
+            }
+            else if line_i == line || line_i == line - 1 || line_i == line + 1 {
+                for _rows in lines {
+                    if row == 0 {
+                        if row_i == row || row_i == row + 1 {
+                            if table[line_i][row_i] == 1 {
+                                return true;
+                            }
+                        }
+                    }
+                    else if row_i == row || row_i == row - 1 || row_i == row + 1 {
+                        if table[line_i][row_i] == 1 {
+                            return true;
+                        }
+                    }
+                    row_i += 1;
+                }   
+            }
+            line_i += 1;
+        }
     }
-
-    return end_game;
+    return false;
 }

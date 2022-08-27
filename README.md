@@ -16,8 +16,6 @@ Then you can just compile it by running cargo on the folder
 
     cargo run -r
 
----
-
 ## comment.rs
 
 Reads input from user and stores it in a .txt on the executing folder.
@@ -40,9 +38,7 @@ CLI calculator with a primitive string processing.
 
 ## minesweeper.rs
 
-A minesweeper game on a 4x4 fixed grid.
-
-> The game has issues on running on debug mode due to a overflow in usize index on the bomb detection function.
+A minesweeper game on a 6x6 to 9x9 grid.
 
 ## cat_tamagotchi.rs
 
