@@ -34,8 +34,8 @@ pub fn play() -> io::Result<()> {
     loop {
         let mut input = String::new();
 
-        println!("\n{}", print_word(&word, &inp_chars));
-        println!("Lives remaing: {}", lives);
+        println!("\n\x1b[33m{}\x1b[0m", print_word(&word, &inp_chars));
+        println!("\x1b[33mLives remaing: {}\x1b[0m", lives);
 
         io::stdin().read_line(&mut input)?;
         let input = input.trim().to_lowercase(); 
@@ -59,11 +59,11 @@ pub fn play() -> io::Result<()> {
             }
 
             if word == print_word(&word, &inp_chars) {
-                println!("\nYou Won!\nThe word was {}!", word);
+                println!("\n\x1b[32mYou Won!\nThe word was {}!\x1b[0m", word);
                 break;
             }
             if lives == 0 {
-                println!("\nYou Lost!\nThe word was {}!", word);
+                println!("\n\x1b[31mYou Lost!\nThe word was '{}'!\x1b[0m", word);
                 break;
             }
         }

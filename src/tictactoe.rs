@@ -121,15 +121,15 @@ fn continue_game (table: &Vec<Vec<i32>>) -> bool {
     }
 	
     if won {
-        println!("\nYou won!");
+        println!("\n\x1b[32mYou won!\x1b[0m");
         return false;
     }
     if lost {
-        println!("\nYou lost!");
+        println!("\n\x1b[31mYou lost!\x1b[0m");
         return false;
     }
 	if tie {
-		println!("\nTie!");
+		println!("\n\x1b[35mTie!\x1b[0m");
 		return false;
 	}
     return true;
@@ -183,12 +183,12 @@ fn print_table (table: &Vec<Vec<i32>>) {
         for entry in line {
             match entry {
                 0 => print!("   "),
-                1 => print!(" X "),
-                -1 => print!(" O "),
+                1 => print!(" \x1b[32mX\x1b[0m "),
+                -1 => print!(" \x1b[31mO\x1b[0m "),
                 _ => continue
             }
             if tabs < 2 {
-                print!("|");
+                print!("\x1b[33m|\x1b[0m");
                 tabs += 1;
             }
         }
