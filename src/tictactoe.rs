@@ -1,9 +1,19 @@
 use std::io;
 use rand::{self, Rng};
 
+const SIZE: usize = 3;
+
+const RED: &str = "\x1b[31m";
+const GREEN: &str = "\x1b[32m";
+const YELLOW: &str = "\x1b[33m";
+const END: &str = "\x1b[0m";
+
+#[derive(PartialEq)]
+enum TurnResult {Won, Lost, Tie, Continue}
+
 pub fn play() -> io::Result<()> {
-    let width = 3;
-    let height = 3;
+    let width = SIZE;
+    let height = SIZE;
     let mut table = vec![vec![0; width]; height];
 
     println!(r"
@@ -31,7 +41,7 @@ pub fn play() -> io::Result<()> {
             let string_input = string_input.trim();
             
             if string_input.len() == 2 {
-                let number_input = player_input(string_input);
+                let number_input = numerical_player_input(string_input);
                 
                 if table[number_input[0]][number_input[1]] == 0 {
                     table[number_input[0]][number_input[1]] = 1;
@@ -65,77 +75,7 @@ pub fn play() -> io::Result<()> {
     Ok(())
 }
 
-fn continue_game (table: &Vec<Vec<i32>>) -> bool {
-	let mut won = false;
-    let mut lost = false;
-	let mut tie = true;
-
-	for line in table {
-		if line.contains(&0) {
-			tie = false;
-		}
-	}
-
-    for line in 0..=2 {
-        let mut sum = 0;
-        for row in 0..=2 {
-            sum += table[line][row]; 
-            if sum == 3 {
-                won = true;
-            }
-            if sum == -3 {
-                lost = true;
-            }
-        }
-    }
-    for row in 0..=2 {
-        let mut sum = 0;
-        for line in 0..=2 {
-            sum += table[line][row]; 
-            if sum == 3 {
-                won = true;
-            }
-            if sum == -3 {
-                lost = true;
-            }
-        }
-    }
-    if table[1][1] != 0 {
-        let mut sum = 0;
-        sum += table[1][1] + table[0][2] + table[2][0];
-        if sum == 3 {
-            won = true;
-        }
-        if sum == -3 {
-            lost = true;
-        }
-
-        let mut sum = 0;
-        sum += table[1][1] + table[0][0] + table[2][2];
-        if sum == 3 {
-            won = true;
-        }
-        if sum == -3 {
-            lost = true;
-        }
-    }
-	
-    if won {
-        println!("\n\x1b[32mYou won!\x1b[0m");
-        return false;
-    }
-    if lost {
-        println!("\n\x1b[31mYou lost!\x1b[0m");
-        return false;
-    }
-	if tie {
-		println!("\n\x1b[35mTie!\x1b[0m");
-		return false;
-	}
-    return true;
-}
-
-fn player_input (input: &str) -> Vec<usize> {
+fn numerical_player_input(input: &str) -> Vec<usize> {
     let numbers = vec!['1', '2', '3'];
     let letters = vec!['A', 'B', 'C'];
     let mut number_input = vec![];
@@ -144,12 +84,7 @@ fn player_input (input: &str) -> Vec<usize> {
     for char in input.chars() {
         if iter == 0 {
             if numbers.contains(&char) {
-                match char {
-                    '1' => number_input.push(0),
-                    '2' => number_input.push(1),
-                    '3' => number_input.push(2),
-                    _ => continue
-                }
+                number_input.push(char.to_string().parse::<usize>().unwrap() - 1)
             }
             else {
                 println!("Wrong format...");
@@ -176,22 +111,114 @@ fn player_input (input: &str) -> Vec<usize> {
     return number_input;
 }
 
-fn print_table (table: &Vec<Vec<i32>>) {
+fn print_table(table: &Vec<Vec<i32>>) {
 	print!("\n");
     for line in table {
         let mut tabs = 0; 
         for entry in line {
             match entry {
                 0 => print!("   "),
-                1 => print!(" \x1b[32mX\x1b[0m "),
-                -1 => print!(" \x1b[31mO\x1b[0m "),
+                1 => print!(" {GREEN}X{END} "),
+                -1 => print!(" {RED}O{END} "),
                 _ => continue
             }
             if tabs < 2 {
-                print!("\x1b[33m|\x1b[0m");
+                print!("{YELLOW}|{END}");
                 tabs += 1;
             }
         }
         print!("\n");
     }
+}
+
+fn continue_game(table: &Vec<Vec<i32>>) -> bool {
+    let turn_result = check_turn_result(&table);
+
+    match turn_result {
+        TurnResult::Won => {println!("\n{GREEN}You won!{END}");
+                return false;},
+        TurnResult::Lost => {println!("\n{RED}You lost!{END}");
+                return false},
+        TurnResult::Tie => {println!("\n{YELLOW}Tie!{END}");
+                return false},
+        TurnResult::Continue => return true,
+    }
+}
+
+fn check_turn_result(table: &Vec<Vec<i32>>) -> TurnResult {
+    let mut result: TurnResult;
+    
+    result = check_tie(&table);
+    if result != TurnResult::Continue {
+        return result;
+    }
+    result = check_lines(&table);
+    if result != TurnResult::Continue {
+        return result;
+    }
+    result = check_rows(&table);
+    if result != TurnResult::Continue {
+        return result;
+    }
+    result = check_diagonals(&table);
+    return result;
+}
+
+fn check_tie (table: &Vec<Vec<i32>>) -> TurnResult {
+    for line in table {
+		if line.contains(&0) {
+            return TurnResult::Continue;
+		}
+	}
+    return TurnResult::Tie;
+}
+
+fn check_lines (table: &Vec<Vec<i32>>) -> TurnResult {
+    for line in 0..=2 {
+        let mut sum = 0;
+        for row in 0..=2 {
+            sum += table[line][row]; 
+            match sum {
+                3 => return TurnResult::Won,
+                -3 => return TurnResult::Lost,
+                _ => ()
+            }
+        }
+    }
+    return TurnResult::Continue;
+}
+
+fn check_rows (table: &Vec<Vec<i32>>) -> TurnResult {
+    for row in 0..=2 {
+        let mut sum = 0;
+        for line in 0..=2 {
+            sum += table[line][row]; 
+            match sum {
+                3 => return TurnResult::Won,
+                -3 => return TurnResult::Lost,
+                _ => ()
+            }
+        }
+    }
+    return TurnResult::Continue;
+}
+
+fn check_diagonals (table: &Vec<Vec<i32>>) -> TurnResult {
+    if table[1][1] != 0 {
+        let mut sum = 0;
+        sum += table[1][1] + table[0][2] + table[2][0];
+        match sum {
+            3 => return TurnResult::Won,
+            -3 => return TurnResult::Lost,
+            _ => ()
+        }
+        let mut sum = 0;
+        sum += table[1][1] + table[0][0] + table[2][2];
+        match sum {
+            3 => return TurnResult::Won,
+            -3 => return TurnResult::Lost,
+            _ => ()
+        }
+    }
+    return TurnResult::Continue;
 }
