@@ -40,9 +40,9 @@ pub fn play() -> io::Result<()> {
             let string_input = string_input.to_uppercase();
             let string_input = string_input.trim();
             
-            if string_input.len() == 2 {
-                let number_input = numerical_player_input(string_input);
-                
+            let number_input = numerical_player_input(string_input);
+            
+            if number_input.len() == 2 {
                 if table[number_input[0]][number_input[1]] == 0 {
                     table[number_input[0]][number_input[1]] = 1;
                     break;
@@ -52,7 +52,7 @@ pub fn play() -> io::Result<()> {
                 }
             }
             else {
-                println!("Wrong format...");
+                println!("Wrong input...");
             }
         }
 
@@ -80,14 +80,10 @@ fn numerical_player_input(input: &str) -> Vec<usize> {
     let letters = vec!['A', 'B', 'C'];
     let mut number_input = vec![];
 
-    let mut iter = 0;
-    for char in input.chars() {
+    for (char, iter) in input.chars().zip(0..=2) {
         if iter == 0 {
             if numbers.contains(&char) {
                 number_input.push(char.to_string().parse::<usize>().unwrap() - 1)
-            }
-            else {
-                println!("Wrong format...");
             }
         }
         else if iter == 1 {
@@ -99,14 +95,10 @@ fn numerical_player_input(input: &str) -> Vec<usize> {
                     _ => continue
                 }
             }
-            else {
-                println!("Wrong format...");
-            } 
         }
         else {
             break;
         }
-        iter += 1;
     }
     return number_input;
 }
@@ -114,7 +106,7 @@ fn numerical_player_input(input: &str) -> Vec<usize> {
 fn print_table(table: &Vec<Vec<i32>>) {
 	print!("\n");
     for line in table {
-        let mut tabs = 0; 
+        let mut divisor_iter = 0; 
         for entry in line {
             match entry {
                 0 => print!("   "),
@@ -122,9 +114,9 @@ fn print_table(table: &Vec<Vec<i32>>) {
                 -1 => print!(" {RED}O{END} "),
                 _ => continue
             }
-            if tabs < 2 {
+            if divisor_iter < 2 {
                 print!("{YELLOW}|{END}");
-                tabs += 1;
+                divisor_iter += 1;
             }
         }
         print!("\n");
@@ -132,9 +124,9 @@ fn print_table(table: &Vec<Vec<i32>>) {
 }
 
 fn continue_game(table: &Vec<Vec<i32>>) -> bool {
-    let turn_result = check_turn_result(&table);
+    let this_turn_result = check_turn_result(&table);
 
-    match turn_result {
+    match this_turn_result {
         TurnResult::Won => {println!("\n{GREEN}You won!{END}");
                 return false;},
         TurnResult::Lost => {println!("\n{RED}You lost!{END}");
