@@ -1,5 +1,10 @@
-use rand::Rng;
 use std::io;
+use rand::Rng;
+
+const RED: &str = "\x1b[31m";
+const GREEN: &str = "\x1b[32m";
+const CYAN: &str = "\x1b[36m";
+const END: &str = "\x1b[0m";
 
 pub fn play() -> io::Result<()> {
     let mut allowed_inputs = vec!['1', '2', '3', '4', '5', '6'];
@@ -73,10 +78,11 @@ pub fn play() -> io::Result<()> {
             }
         }
 
-        // OPEN PLAYER INPUTED TILE
         if number_input.len() == 2 {
+
+            // OPEN PLAYER INPUTED TILE
             if table[number_input[0]][number_input[1]] == -1 {
-                println!("\n\x1b[31mYou exploded!\x1b[0m");
+                println!("\n{RED}You exploded!{END}");
                 print_table(&table, true);
                 break;
             }
@@ -87,56 +93,19 @@ pub fn play() -> io::Result<()> {
                 table[number_input[0]][number_input[1]] = 1;
             }
             
-            // AUTO-OPEN TILES
+            // AUTO-OPEN ZERO TILES AND AROUND
             let mut line_i = 0;
-            for line in table.clone() {
+            for line in table.clone(){
                 let mut row_i = 0;
                 for _row in line {
-                    if auto_open(line_i, row_i, table.clone()) {
+                    if open_zero(line_i, row_i, &table) {
                         table[line_i][row_i] = 1;
-                        
-                        let mut sub_line_i = 0;
-                        for lines in table.clone() {
-                            let mut sub_row_i = 0;
-                            if line_i == 0 {
-                                if sub_line_i == line_i || sub_line_i == line_i + 1 {
-                                    for _rows in lines {
-                                        if row_i == 0 {
-                                            if sub_row_i == row_i || sub_row_i == row_i + 1 {
-                                                if table[sub_line_i][sub_row_i] == 0 {
-                                                    table[sub_line_i][sub_row_i] = 1;
-                                                }
-                                            }
-                                        }
-                                        else if sub_row_i == row_i || sub_row_i == row_i - 1 || sub_row_i == row_i + 1 {
-                                            if table[sub_line_i][sub_row_i] == 0 {
-                                                table[sub_line_i][sub_row_i] = 1;
-                                            }
-                                        }
-                                        sub_row_i += 1;
-                                    }   
-                                }
-                            }
-                            else if sub_line_i == line_i || sub_line_i == line_i - 1 || sub_line_i == line_i + 1 {
-                                for _rows in lines {
-                                    if row_i == 0 {
-                                        if sub_row_i == row_i || sub_row_i == row_i + 1 {
-                                            if table[sub_line_i][sub_row_i] == 0 {
-                                                table[sub_line_i][sub_row_i] = 1;
-                                            }
-                                        }
-                                    }
-                                    else if sub_row_i == row_i || sub_row_i == row_i - 1 || sub_row_i == row_i + 1 {
-                                        if table[sub_line_i][sub_row_i] == 0 {
-                                            table[sub_line_i][sub_row_i] = 1;
-                                        }
-                                    }
-                                    sub_row_i += 1;
-                                }   
-                            }
-                            sub_line_i += 1;
-                        }
 
+                        let around_zero = get_all_around(0, line_i, row_i, &table);
+                        
+                        for coordinates in around_zero {
+                            table[coordinates[0]][coordinates[1]] = 1;
+                        }
                     }
                     row_i += 1;
                 }
@@ -151,7 +120,7 @@ pub fn play() -> io::Result<()> {
                 }
             }
             if !continue_game {
-                println!("\n\x1b[32mYou won!\x1b[0m");
+                println!("\n{GREEN}You won!{END}");
                 print_table(&table, true);
                 break;
             }
@@ -164,18 +133,17 @@ pub fn play() -> io::Result<()> {
     Ok(())
 }
 
-fn print_table (table: &Vec<Vec<i32>>, show_bombs: bool) {
+fn print_table(table: &Vec<Vec<i32>>, show_bombs: bool) {
     print!("\n");
-
     let mut line_i = 0;
     for line in table {
         let mut row_i = 0;
         for entry in line {
             match entry {
-                -1 => { if show_bombs {print!(" \x1b[31mQ\x1b[0m ");}
-                        else {print!(" \x1b[32m*\x1b[0m ");}},
-                0 => print!(" \x1b[32m*\x1b[0m "),
-                1 => print!(" \x1b[36m{}\x1b[0m ", count_bombs(line_i, row_i, table.clone())),
+                -1 => { if show_bombs {print!(" {RED}Q{END} ");}
+                        else {print!(" {GREEN}*{END} ");} },
+                0 => print!(" {GREEN}*{END} "),
+                1 => print!(" {CYAN}{}{END} ", look_around_cell(-1, line_i, row_i, table)),
                 _ => continue
             }
             row_i += 1;
@@ -185,8 +153,17 @@ fn print_table (table: &Vec<Vec<i32>>, show_bombs: bool) {
     }
 }
 
-fn count_bombs (line: usize, row: usize, table: Vec<Vec<i32>>) -> i32 {
-    let mut close_bombs = 0;
+fn open_zero(line: usize, row: usize, table: &Vec<Vec<i32>>) -> bool {
+    if look_around_cell(-1, line, row, &table) == 0 {
+        if look_around_cell(1, line, row, &table) > 0 {
+            return true;
+        }
+    }
+    return false;
+}
+
+fn get_all_around(equal_to: i32, line: usize, row: usize, table: &Vec<Vec<i32>>) -> Vec<Vec<usize>> {
+    let mut positions = vec![];
 
     let mut line_i = 0;
     for lines in table.iter() {
@@ -197,14 +174,16 @@ fn count_bombs (line: usize, row: usize, table: Vec<Vec<i32>>) -> i32 {
                 for _rows in lines {
                     if row == 0 {
                         if row_i == row || row_i == row + 1 {
-                            if table[line_i][row_i] == -1 {
-                                close_bombs += 1;
+                            if table[line_i][row_i] == equal_to {
+                                let coordinate = vec![line_i, row_i];
+                                positions.push(coordinate);
                             }
                         }
                     }
                     else if row_i == row || row_i == row - 1 || row_i == row + 1 {
-                        if table[line_i][row_i] == -1 {
-                            close_bombs += 1;
+                        if table[line_i][row_i] == equal_to {
+                            let coordinate = vec![line_i, row_i];
+                            positions.push(coordinate);
                         }
                     }
                     row_i += 1;
@@ -215,14 +194,16 @@ fn count_bombs (line: usize, row: usize, table: Vec<Vec<i32>>) -> i32 {
             for _rows in lines {
                 if row == 0 {
                     if row_i == row || row_i == row + 1 {
-                        if table[line_i][row_i] == -1 {
-                            close_bombs += 1;
+                        if table[line_i][row_i] == equal_to {
+                            let coordinate = vec![line_i, row_i];
+                            positions.push(coordinate);
                         }
                     }
                 }
                 else if row_i == row || row_i == row - 1 || row_i == row + 1 {
-                    if table[line_i][row_i] == -1 {
-                        close_bombs += 1;
+                    if table[line_i][row_i] == equal_to {
+                        let coordinate = vec![line_i, row_i];
+                        positions.push(coordinate);
                     }
                 }
                 row_i += 1;
@@ -230,54 +211,53 @@ fn count_bombs (line: usize, row: usize, table: Vec<Vec<i32>>) -> i32 {
         }
         line_i += 1;
     }
-    return close_bombs;
+    return positions;
 }
 
-fn auto_open (line: usize, row: usize, table: Vec<Vec<i32>>) -> bool {
+fn look_around_cell(for_value: i32, line: usize, row: usize, table: &Vec<Vec<i32>>) -> i32 {
+    let mut how_many = 0;
 
-    if count_bombs(line, row, table.clone()) == 0 {
-        let mut line_i = 0;
-        for lines in table.iter() {
-            let mut row_i = 0;
+    let mut line_i = 0;
+    for lines in table.iter() {
+        let mut row_i = 0;
 
-            if line == 0 {
-                if line_i == line || line_i == line + 1 {
-                    for _rows in lines {
-                        if row == 0 {
-                            if row_i == row || row_i == row + 1 {
-                                if table[line_i][row_i] == 1 {
-                                    return true;
-                                }
-                            }
-                        }
-                        else if row_i == row || row_i == row - 1 || row_i == row + 1 {
-                            if table[line_i][row_i] == 1 {
-                                return true;
-                            }
-                        }
-                        row_i += 1;
-                    }   
-                }
-            }
-            else if line_i == line || line_i == line - 1 || line_i == line + 1 {
+        if line == 0 {
+            if line_i == line || line_i == line + 1 {
                 for _rows in lines {
                     if row == 0 {
                         if row_i == row || row_i == row + 1 {
-                            if table[line_i][row_i] == 1 {
-                                return true;
+                            if table[line_i][row_i] == for_value {
+                                how_many += 1;
                             }
                         }
                     }
                     else if row_i == row || row_i == row - 1 || row_i == row + 1 {
-                        if table[line_i][row_i] == 1 {
-                            return true;
+                        if table[line_i][row_i] == for_value {
+                            how_many += 1;
                         }
                     }
                     row_i += 1;
                 }   
             }
-            line_i += 1;
         }
+        else if line_i == line || line_i == line - 1 || line_i == line + 1 {
+            for _rows in lines {
+                if row == 0 {
+                    if row_i == row || row_i == row + 1 {
+                        if table[line_i][row_i] == for_value {
+                            how_many += 1;
+                        }
+                    }
+                }
+                else if row_i == row || row_i == row - 1 || row_i == row + 1 {
+                    if table[line_i][row_i] == for_value {
+                        how_many += 1;
+                    }
+                }
+                row_i += 1;
+            }   
+        }
+        line_i += 1;
     }
-    return false;
+    return how_many;
 }
