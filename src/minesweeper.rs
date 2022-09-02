@@ -143,7 +143,7 @@ fn print_table(table: &Vec<Vec<i32>>, show_bombs: bool) {
                 -1 => { if show_bombs {print!(" {RED}Q{END} ");}
                         else {print!(" {GREEN}*{END} ");} },
                 0 => print!(" {GREEN}*{END} "),
-                1 => print!(" {CYAN}{}{END} ", look_around_cell(-1, line_i, row_i, table)),
+                1 => print!(" {CYAN}{}{END} ", get_all_around(-1, line_i, row_i, table).len()),
                 _ => continue
             }
             row_i += 1;
@@ -154,8 +154,8 @@ fn print_table(table: &Vec<Vec<i32>>, show_bombs: bool) {
 }
 
 fn open_zero(line: usize, row: usize, table: &Vec<Vec<i32>>) -> bool {
-    if look_around_cell(-1, line, row, &table) == 0 {
-        if look_around_cell(1, line, row, &table) > 0 {
+    if get_all_around(-1, line, row, &table).len() == 0 {
+        if get_all_around(1, line, row, &table).len() > 0 {
             return true;
         }
     }
@@ -212,52 +212,4 @@ fn get_all_around(equal_to: i32, line: usize, row: usize, table: &Vec<Vec<i32>>)
         line_i += 1;
     }
     return positions;
-}
-
-fn look_around_cell(for_value: i32, line: usize, row: usize, table: &Vec<Vec<i32>>) -> i32 {
-    let mut how_many = 0;
-
-    let mut line_i = 0;
-    for lines in table.iter() {
-        let mut row_i = 0;
-
-        if line == 0 {
-            if line_i == line || line_i == line + 1 {
-                for _rows in lines {
-                    if row == 0 {
-                        if row_i == row || row_i == row + 1 {
-                            if table[line_i][row_i] == for_value {
-                                how_many += 1;
-                            }
-                        }
-                    }
-                    else if row_i == row || row_i == row - 1 || row_i == row + 1 {
-                        if table[line_i][row_i] == for_value {
-                            how_many += 1;
-                        }
-                    }
-                    row_i += 1;
-                }   
-            }
-        }
-        else if line_i == line || line_i == line - 1 || line_i == line + 1 {
-            for _rows in lines {
-                if row == 0 {
-                    if row_i == row || row_i == row + 1 {
-                        if table[line_i][row_i] == for_value {
-                            how_many += 1;
-                        }
-                    }
-                }
-                else if row_i == row || row_i == row - 1 || row_i == row + 1 {
-                    if table[line_i][row_i] == for_value {
-                        how_many += 1;
-                    }
-                }
-                row_i += 1;
-            }   
-        }
-        line_i += 1;
-    }
-    return how_many;
 }
