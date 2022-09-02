@@ -20,10 +20,6 @@ Then you can just compile it by running cargo on the folder
 
 Reads input from user and stores it in a .txt on the executing folder.
 
-## guessing_game.rs
-
-A number between 1 and 10 is generated randomly, you have to guess it. Part of rust's official tutorial.
-
 ## hangman.rs
 
 Simple hangman game with hardcoded words.
