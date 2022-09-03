@@ -1,14 +1,9 @@
 use std::io;
 
-pub enum Actions {
-    Idle,
-    Eat,
-    Sleep,
-    Play
-}
+enum Actions {Idle, Eat, Sleep, Play}
 
-pub struct Cat {
-    pub name: String,
+struct Cat {
+    name: String,
     hunger: i8,
     tiredness: i8,
     boredom: i8,
@@ -22,6 +17,14 @@ impl Default for Cat {
 }
 
 impl Cat {
+    fn rename(&mut self, name: String) -> Result<(), ()> {
+        if name.len() != 0 {
+            self.name = name;
+            return Ok(());
+        }
+        return Err(());
+    }
+
     fn draw(&self) {
         match self.state {
             Actions::Sleep => { println!(r"
@@ -92,6 +95,13 @@ impl Cat {
 
         self.draw();
     }
+
+    fn flee (&self) -> bool {
+        if self.boredom == 10 || self.hunger == 10 || self.tiredness == 10 {
+            return true;
+        }
+        return false;
+    }
 }
 
 pub fn play() -> io::Result<()> {
@@ -102,12 +112,18 @@ pub fn play() -> io::Result<()> {
         Welcome to Cat Tamagotchi!
         What's the name of your cat?
     ");
+
     loop {
-        io::stdin().read_line(&mut cat.name)?;
-        if cat.name.trim().len() != 0 {
-            break;
+        let mut input = String::new();
+        io::stdin().read_line(&mut input)?;
+        let input = input.trim().to_string();
+
+        match cat.rename(input) {
+            Ok(()) => break,
+            Err(()) => println!("Invalid name.")
         }
     }
+    
     cat.draw();
     println!(r"
         You can take the following actions:
@@ -117,8 +133,8 @@ pub fn play() -> io::Result<()> {
     loop {
         let mut input = String::new();
         io::stdin().read_line(&mut input)?;
-        let input = input.trim().to_lowercase();
-        let input = input.as_str();
+        let input = input.to_lowercase();
+        let input = input.trim();
 
         if actions.contains(&input) {
             if input == "exit" {
@@ -133,8 +149,8 @@ pub fn play() -> io::Result<()> {
             println!("The input does not correspond to an action.");
         }
 
-        if cat.boredom == 10 || cat.hunger == 10 || cat.tiredness == 10 {
-            println!(r"Your cat fleed...");
+        if cat.flee() {
+            println!("Your cat fleed...");
             break;
         }
     }
