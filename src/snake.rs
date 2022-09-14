@@ -61,11 +61,11 @@ pub fn play() -> io::Result<()> {
         };
 
         if next_position.x < 0 || next_position.x > INDEX_SIZE as i32 || next_position.y < 0 || next_position.y > INDEX_SIZE as i32 {
-            println!("Hit a wall!");
+            println!("\nHit a wall!");
             break;
         }
         else if map[next_position.y as usize][next_position.x as usize] == '🐍'{
-            println!("Hit yourself!");
+            println!("\nHit yourself!");
             break;
         }
         else {
