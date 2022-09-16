@@ -1,11 +1,13 @@
-use std::{io, thread, time::Duration, fmt::Debug};
+use std::{io, thread, time::{Duration, Instant}, fmt::Debug};
 use rand::{self, Rng};
 use device_query::{DeviceQuery, DeviceState};
 
 const SIZE: usize = 16;
 const INDEX_SIZE: usize = SIZE - 1;
-const GAME_SPEED: u64 = 100;
+
+const GAME_SPEED: u64 = 200;
 const START_SPEED: u64 = 500;
+const INPUT_WAITING_TIME: u64 = 10;
 
 #[derive(Debug, Clone, Copy)]
 struct Vector2D {
@@ -47,13 +49,20 @@ pub fn play() -> io::Result<()> {
     loop {
         print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
         print_map(&map);
-        println!("\nScore: {}", player.apples);
+        println!("\nApples: {}", player.apples);
 
-        thread::sleep(Duration::from_millis(GAME_SPEED));
-        match player_input(&device) {
-            Some(new_direction) => player.direction = new_direction,
-            None => ()
+        let time_counter = Instant::now();
+        loop {
+            match player_input(&device) {
+                Some(new_direction) => player.direction = new_direction,
+                None => ()
+            }
+            if time_counter.elapsed() >= Duration::from_millis(GAME_SPEED) {
+                break;
+            }
+            thread::sleep(Duration::from_millis(INPUT_WAITING_TIME));
         }
+        drop(time_counter);
 
         let next_position = Vector2D {
             x: player.position.x + player.direction.x,
@@ -89,13 +98,7 @@ pub fn play() -> io::Result<()> {
             Some(location) => {
                 map[location.y as usize][location.x as usize] = '🍎'
             }
-        }
-
-        thread::sleep(Duration::from_millis(GAME_SPEED));
-        match player_input(&device) {
-            Some(new_direction) => player.direction = new_direction,
-            None => ()
-        }        
+        }     
     }
     Ok(())
 }
