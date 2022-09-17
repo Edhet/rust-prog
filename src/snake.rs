@@ -1,32 +1,46 @@
-use std::{io, thread, time::{Duration, Instant}, fmt::Debug};
+use std::{io, thread, time::{Duration, Instant}, ops::Add};
 use rand::{self, Rng};
 use device_query::{DeviceQuery, DeviceState};
 
 const SIZE: usize = 16;
-const INDEX_SIZE: usize = SIZE - 1;
+const INDEX_SIZE: i32 = (SIZE as i32) - 1;
 
-const GAME_SPEED: u64 = 200;
-const START_SPEED: u64 = 500;
-const INPUT_WAITING_TIME: u64 = 10;
+const INPUT_HEARING_TIME: u64 = 180;
+const NAME_SCREEN_TIME: u64 = 500;
 
-#[derive(Debug, Clone, Copy)]
+enum Event {HitWall, HitYou, Walked, WalkedOnApple}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
 struct Vector2D {
     x: i32,
     y: i32
 }
 
+impl Add for Vector2D {
+    type Output = Vector2D;
+
+    fn add(self, rhs: Vector2D) -> Self::Output {
+        Self {
+            x: self.x + rhs.x,
+            y: self.y + rhs.y
+        }
+    }
+}
+
 struct Snake {
     position: Vector2D,
+    old_positions: Vec<Vector2D>,
     direction: Vector2D,
-    end_positions: Vec<Vector2D>,
+    old_direction: Vector2D,
     apples: usize
 }
 
 pub fn play() -> io::Result<()> {
     let mut player = Snake {
         position: {Vector2D{x: 0, y: 0}},
+        old_positions: vec![{Vector2D{x: 0, y: 0}}],
         direction: {Vector2D{x: 1, y: 0}}, 
-        end_positions: vec![{Vector2D{x: 0, y: 0}}],
+        old_direction: {Vector2D{x: 0, y: 0}},
         apples: 0
     };
 
@@ -44,53 +58,64 @@ pub fn play() -> io::Result<()> {
      
                     Starting... 
     ");
-    thread::sleep(Duration::from_millis(START_SPEED));
+    thread::sleep(Duration::from_millis(NAME_SCREEN_TIME));
 
     loop {
         print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
         print_map(&map);
         println!("\nApples: {}", player.apples);
-
+        
         let time_counter = Instant::now();
         loop {
             match player_input(&device) {
-                Some(new_direction) => player.direction = new_direction,
+                Some(new_direction) => {
+                    if new_direction != player.direction {
+                        player.old_direction = player.direction
+                    }
+                    player.direction = new_direction
+                },
                 None => ()
             }
-            if time_counter.elapsed() >= Duration::from_millis(GAME_SPEED) {
+            if time_counter.elapsed() >= Duration::from_millis(INPUT_HEARING_TIME) {
                 break;
             }
-            thread::sleep(Duration::from_millis(INPUT_WAITING_TIME));
         }
         drop(time_counter);
 
-        let next_position = Vector2D {
-            x: player.position.x + player.direction.x,
-            y: player.position.y + player.direction.y
-        };
+        let mut next_position = player.position + player.direction;
 
-        if next_position.x < 0 || next_position.x > INDEX_SIZE as i32 || next_position.y < 0 || next_position.y > INDEX_SIZE as i32 {
-            println!("\nHit a wall!");
-            break;
-        }
-        else if map[next_position.y as usize][next_position.x as usize] == '🐍'{
-            println!("\nHit yourself!");
-            break;
-        }
-        else {
-            if map[next_position.y as usize][next_position.x as usize] == '🍎' {
-                player.apples += 1;
+        if player.old_positions.len() > 0 {
+            let last_index = player.old_positions.len() -1 as usize;
+            if player.old_positions[last_index].x == next_position.x && player.old_positions[last_index].y == next_position.y  {
+                next_position = player.position + player.old_direction;
             }
-            player.end_positions.push(player.position);
-            player.position.x = next_position.x;
-            player.position.y = next_position.y;
         }
 
-        map[player.end_positions[0].y as usize][player.end_positions[0].x as usize] = '🟩';
+        match check_next_position(&map, next_position) {
+            Event::HitWall => {
+                println!("\nHit a wall!");   
+                break;
+            }
+            Event::HitYou => {
+                println!("\nHit yourself!");   
+                break;
+            }
+            Event::Walked => {
+                player.old_positions.push(player.position);
+                player.position = next_position;
+            },
+            Event::WalkedOnApple => {
+                player.apples += 1;
+                player.old_positions.push(player.position);
+                player.position = next_position;
+            }
+        }
+
+        map[player.old_positions[0].y as usize][player.old_positions[0].x as usize] = '🟩';
         map[player.position.y as usize][player.position.x as usize] = '🐍';
 
-        while player.end_positions.len() > player.apples {
-            player.end_positions.remove(0);
+        while player.old_positions.len() > player.apples {
+            player.old_positions.remove(0);
         }
         
         match generate_apple(&map) {
@@ -98,16 +123,33 @@ pub fn play() -> io::Result<()> {
             Some(location) => {
                 map[location.y as usize][location.x as usize] = '🍎'
             }
-        }     
+        }    
     }
     Ok(())
 }
 
+fn check_next_position(map: &Vec<Vec<char>>, next_position: Vector2D) -> Event {
+
+    if next_position.x < 0 || next_position.x > INDEX_SIZE|| next_position.y < 0 || next_position.y > INDEX_SIZE {
+        return Event::HitWall;
+    }
+    else if map[next_position.y as usize][next_position.x as usize] == '🐍'{
+        return Event::HitYou;
+    }
+    else {
+        if map[next_position.y as usize][next_position.x as usize] == '🍎' {
+            return Event::WalkedOnApple;
+        }
+        return Event::Walked;
+    }
+}
+
 fn player_input(device: &DeviceState) -> Option<Vector2D> {
     let mut new_direction = Vector2D {x: 0, y: 0};
+    let key_presses = device.get_keys().clone();
 
-    if device.get_keys().len() > 0 {
-        match device.get_keys()[0].to_string().chars().next().unwrap() {
+    if key_presses.len() > 0 {
+        match key_presses[0].to_string().chars().next().unwrap() {
         'W' => {new_direction.x = 0; new_direction.y = -1; return Some(new_direction);},
         'A' => {new_direction.x = -1; new_direction.y = 0; return Some(new_direction);},
         'S' => {new_direction.x = 0; new_direction.y = 1; return Some(new_direction);},
@@ -124,11 +166,15 @@ fn generate_apple(map: &Vec<Vec<char>>) -> Option<Vector2D> {
             return None;
         }
     }
-    let randon_location = Vector2D {
-        x: rand::thread_rng().gen_range(0..SIZE) as i32, 
-        y: rand::thread_rng().gen_range(0..SIZE) as i32
-    };
-    return Some(randon_location);
+    loop {
+        let randon_location = Vector2D {
+            x: rand::thread_rng().gen_range(0..SIZE) as i32, 
+            y: rand::thread_rng().gen_range(0..SIZE) as i32
+        };
+        if map[randon_location.y as usize][randon_location.x as usize] != '🐍' {
+            return Some(randon_location);
+        }
+    }
 }
 
 fn print_map(map: &Vec<Vec<char>>) {
