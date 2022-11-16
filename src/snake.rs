@@ -61,7 +61,6 @@ pub fn play() -> io::Result<()> {
     thread::sleep(Duration::from_millis(NAME_SCREEN_TIME));
 
     loop {
-        print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
         print_map(&map);
         println!("\nApples: {}", player.apples);
         
@@ -85,8 +84,8 @@ pub fn play() -> io::Result<()> {
         let mut next_position = player.position + player.direction;
 
         if player.old_positions.len() > 0 {
-            let last_index = player.old_positions.len() -1 as usize;
-            if player.old_positions[last_index].x == next_position.x && player.old_positions[last_index].y == next_position.y  {
+            let lastest_index = player.old_positions.len() -1 as usize;
+            if player.old_positions[lastest_index] == next_position  {
                 next_position = player.position + player.old_direction;
             }
         }
@@ -145,15 +144,13 @@ fn check_next_position(map: &Vec<Vec<char>>, next_position: Vector2D) -> Event {
 }
 
 fn player_input(device: &DeviceState) -> Option<Vector2D> {
-    let mut new_direction = Vector2D {x: 0, y: 0};
     let key_presses = device.get_keys().clone();
-
     if key_presses.len() > 0 {
         match key_presses[0].to_string().chars().next().unwrap() {
-        'W' => {new_direction.x = 0; new_direction.y = -1; return Some(new_direction);},
-        'A' => {new_direction.x = -1; new_direction.y = 0; return Some(new_direction);},
-        'S' => {new_direction.x = 0; new_direction.y = 1; return Some(new_direction);},
-        'D' => {new_direction.x = 1; new_direction.y = 0; return Some(new_direction);},
+        'W' => {return Some(Vector2D {x: 0, y: -1});},
+        'A' => {return Some(Vector2D {x: -1, y: 0});},
+        'S' => {return Some(Vector2D {x: 0, y: 1});},
+        'D' => {return Some(Vector2D {x: 1, y: 0});},
         _ => ()
         }
     }
@@ -178,10 +175,12 @@ fn generate_apple(map: &Vec<Vec<char>>) -> Option<Vector2D> {
 }
 
 fn print_map(map: &Vec<Vec<char>>) {
-        for line in map.iter() {
-            for char in line {
-                print!(" {} ", char);
-            }
-            println!();
+    print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
+
+    for line in map.iter() {
+        for char in line {
+            print!(" {} ", char);
         }
+        println!();
+    }
 }

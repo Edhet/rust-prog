@@ -14,7 +14,7 @@ To compile, first you need to have the rust compiler installed, then you can clo
     project_name::public_function();
     }
 
-Then you can just compile it by running cargo on the folder
+Then you can just compile it by running cargo on the folder:
 
     cargo run -r
 
